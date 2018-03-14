@@ -1,4 +1,4 @@
-# he-url-shortener
+# he-url-shortener-tests
 Test Tool for HE URL Shortener Task
 
 ## Installation
