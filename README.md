@@ -2,8 +2,10 @@
 Test Tool for HE URL Shortener Task
 
 ## Installation
-To run the test suite, do the following -
+The test suite requires **Python 3** to run. It would be advisable to run the tests in a virtual environment.
 
+
+To run the test suite, do the following -
 
  1. Clone the repository
 ``` 
