@@ -1,4 +1,4 @@
-# he-url-shortener-tests
+# hackerearth-python-challenge
 Test Tool for HE URL Shortener Task - https://www.hackerearth.com/challenge/hiring/hackerearth-python-developer-hiring-challenge/
 
 ## Installation
