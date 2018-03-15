@@ -3,16 +3,63 @@ import requests
 import sys
 import unittest
 
+from constants import (FETCH_SHORT_URL_ENDPOINT, FETCH_LONG_URL_ENDPOINT,
+					FETCH_SHORT_URLS_ENDPOINT, FETCH_LONG_URLS_ENDPOINT,
+					FETCH_COUNT_ENDPOINT, CLEAN_URL_ENDPOINT)
+
 class TestURLShortener(unittest.TestCase):
+
+	def setUp(self):
+
+		# Clean the database
+		self.post(CLEAN_URL_ENDPOINT)
+
+
+	def post(self, end_point, data=None):
+		"""
+		Make a post request
+
+		"""
+		if data is None:
+			data = {}
+
+		url = self.url + end_point
+
+		response = requests.post(url, data=json.dumps(data))
+
+		return response
+
+	def checkResponseOK(self, response):
+		"""
+		Check if response returned 200 OK
+
+		"""
+		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+
+	def getResponseContent(self, response):
+		"""
+		De serialize response content
+
+		"""
+		return json.loads(response.content)
+
+	def checkResponseRedirect(self, response):
+		"""
+		Check for redirection
+
+		"""
+		self.assertEqual(response.status_code, 302, "Server did not return 302 Redirect!!!")
 
 	def test_1(self):
 		"""
-		Provide a long url and gte the short url for it.
-		Use the shortened url to get the actual url.
+		Test for the following scenario -
+
+		1) Provide a long url and gte the short url for it.
+		2) Use the shortened url to get the actual url.
+		3) Find the total number of time the short url was
+		   used to access the long url
 
 		"""
-		end_point = self.end_point + "clean-urls/"
-		response = requests.post(end_point, data={})
 
 		long_url = 'https://www.hackerearth.com/challenge/hiring/hackerearth-python-developer-hiring-challenge/'
 
@@ -20,39 +67,46 @@ class TestURLShortener(unittest.TestCase):
 			'long_url': long_url,
 		}
 
-		end_point = self.end_point + "fetch/short-url/"
-		response = requests.post(end_point, data=data)
-		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+		response = self.post(FETCH_SHORT_URL_ENDPOINT, data=data)
 
-		response = json.loads(response.content)
+		# Check whether server return 200 OK
+		self.checkResponseOK(response)
+
+		# Get the data from the response
+		response = getResponseContent(response)
 		short_url = response['short_url']
 
 		data = {
 			"short_url": short_url,
 		}
 
-		end_point = self.end_point + "fetch/long-url/"
-		response = requests.post(end_point, data=data)
-		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+		response = self.post(FETCH_LONG_URL_ENDPOINT, data=data)
 
-		response = json.loads(response.content)
+		# Check whether server return 200 OK
+		self.checkResponseOK(response)
+
+		response = getResponseContent(response)
 		response_long_url = response['long_url']
 
+		# Check whether the returned url matches the original url
 		self.assertEqual(long_url, response_long_url, "Long url matching failed!!!")
 
-		count = 1
+		# Access the short URL thrice
+		count = 3
 		for _ in xrange(count):
-			response = requests.post(short_url, data={})
-
-		end_point = self.end_point + "fetch/count/"
+			response = self.post(short_url, data={})
+			self.checkResponseRedirect(response)
 
 		data = {
 			'short_url': short_url,
 		}
-		response = requests.post(end_point, data=data)
+		response = self.post(FETCH_COUNT_ENDPOINT, data=data)
 
-		response = json.loads(response.content)
+		self.checkResponseOK(response)
 
+		response = getResponseContent(response)
+
+		# Check whether URL access count matches with the expected value
 		self.assertEqual(count, response['count'], "URL access count did not match!!!")
 
 
@@ -62,41 +116,41 @@ class TestURLShortener(unittest.TestCase):
 		Provide the long url and get the short url.
 
 		"""
-		end_point = self.end_point + "clean-urls/"
-		response = requests.post(end_point, data={})
-
 		long_urls = ['https://www.hackerearth.com/challenge/hiring/hackerearth-python-developer-hiring-challenge/']
 
 		data = {
-			'long_urls': json.dumps(long_urls)
+			'long_urls': long_urls
 		}
 
-		end_point = self.end_point + "fetch/short-urls/"
-		response = requests.post(end_point, data=data)
-		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+		response = self.post(FETCH_LONG_URLS_ENDPOINT, data=data)
 
-		response = json.loads(response.content)
+		# Check whether the returned url matches the original url
+		self.checkResponseOK(response)
+
+		response = getResponseContent(response)
 		long_to_short_url_map = response['short_urls']
 
 		short_urls = long_to_short_url_map.values()
 
 		data = {
-			"short_urls": json.dumps(short_urls),
+			"short_urls": short_urls,
 		}
 
-		end_point = self.end_point + "fetch/long-urls/"
-		response = requests.post(end_point, data=data)
-		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+		response = self.post(FETCH_LONG_URLS_ENDPOINT, data=data)
 
-		response = json.loads(response.content)
+		# Check whether the returned url matches the original url
+		self.checkResponseOK(response)
+
+		response = getResponseContent(response)
 		long_urls = response['long_urls']
 
+		# Check whether long urls match
 		for url in long_urls:
 			key = long_urls[url]
 			self.assertEqual(long_to_short_url_map[key], url, "Long url matching failed!!!")
 
 
 if __name__ == '__main__':
-	TestURLShortener.end_point = sys.argv[1]
+	TestURLShortener.url = sys.argv[1]
 	sys.argv = sys.argv[:1]
 	unittest.main()

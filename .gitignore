@@ -2,3 +2,4 @@ python3/
 url_shortener/
 bin/.*
 bin/__*
+*.pyc
