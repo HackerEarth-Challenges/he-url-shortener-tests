@@ -1,5 +1,5 @@
 # he-url-shortener-tests
-Test Tool for HE URL Shortener Task
+Test Tool for HE URL Shortener Task - https://www.hackerearth.com/challenge/hiring/hackerearth-python-developer-hiring-challenge/
 
 ## Installation
 The test suite requires **Python 3** to run. It would be advisable to run the tests in a virtual environment.
