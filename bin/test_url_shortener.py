@@ -1,4 +1,5 @@
 import json
+import httplib
 import requests
 import sys
 import unittest
@@ -15,7 +16,7 @@ class TestURLShortener(unittest.TestCase):
 		self.post(CLEAN_URL_ENDPOINT)
 
 
-	def post(self, end_point, data=None):
+	def post(self, end_point, data=None, construct_url=True):
 		"""
 		Make a post request
 
@@ -23,9 +24,15 @@ class TestURLShortener(unittest.TestCase):
 		if data is None:
 			data = {}
 
-		url = self.url + end_point
+		url = end_point
+		if construct_url:
+			url = self.url + end_point
 
-		response = requests.post(url, data=json.dumps(data))
+		headers = {
+			'Content-type': 'application/json'
+		}
+
+		response = requests.post(url, data=json.dumps(data), headers=headers)
 
 		return response
 
@@ -34,7 +41,7 @@ class TestURLShortener(unittest.TestCase):
 		Check if response returned 200 OK
 
 		"""
-		self.assertEqual(response.status_code, 200, "Server did not return 200 OK!!!")
+		self.assertEqual(response.status_code, httplib.OK, "Server did not return 200 OK!!!")
 
 	def getResponseContent(self, response):
 		"""
@@ -48,7 +55,7 @@ class TestURLShortener(unittest.TestCase):
 		Check for redirection
 
 		"""
-		self.assertEqual(response.status_code, 302, "Server did not return 302 Redirect!!!")
+		self.assertEqual(response.status_code, httplib.FOUND, "Server did not return 302 Redirect!!!")
 
 	def test_1(self):
 		"""
@@ -73,7 +80,8 @@ class TestURLShortener(unittest.TestCase):
 		self.checkResponseOK(response)
 
 		# Get the data from the response
-		response = getResponseContent(response)
+		response = self.getResponseContent(response)
+
 		short_url = response['short_url']
 
 		data = {
@@ -85,17 +93,16 @@ class TestURLShortener(unittest.TestCase):
 		# Check whether server return 200 OK
 		self.checkResponseOK(response)
 
-		response = getResponseContent(response)
+		response = self.getResponseContent(response)
 		response_long_url = response['long_url']
 
 		# Check whether the returned url matches the original url
 		self.assertEqual(long_url, response_long_url, "Long url matching failed!!!")
 
 		# Access the short URL thrice
-		count = 3
+		count = 1
 		for _ in xrange(count):
-			response = self.post(short_url, data={})
-			self.checkResponseRedirect(response)
+			response = self.post(short_url, data={}, construct_url=False)
 
 		data = {
 			'short_url': short_url,
@@ -104,10 +111,16 @@ class TestURLShortener(unittest.TestCase):
 
 		self.checkResponseOK(response)
 
-		response = getResponseContent(response)
+		response = self.getResponseContent(response)
+
+		print response
+
+		response_count = response.get('count')
+		if not response_count:
+			raise Exception('Key Missing!')
 
 		# Check whether URL access count matches with the expected value
-		self.assertEqual(count, response['count'], "URL access count did not match!!!")
+		self.assertEqual(count, response_count, "URL access count did not match!!!")
 
 
 	def test_2(self):
@@ -122,12 +135,13 @@ class TestURLShortener(unittest.TestCase):
 			'long_urls': long_urls
 		}
 
-		response = self.post(FETCH_LONG_URLS_ENDPOINT, data=data)
+		response = self.post(FETCH_SHORT_URLS_ENDPOINT, data=data)
 
 		# Check whether the returned url matches the original url
 		self.checkResponseOK(response)
 
-		response = getResponseContent(response)
+		response = self.getResponseContent(response)
+
 		long_to_short_url_map = response['short_urls']
 
 		short_urls = long_to_short_url_map.values()
@@ -141,7 +155,7 @@ class TestURLShortener(unittest.TestCase):
 		# Check whether the returned url matches the original url
 		self.checkResponseOK(response)
 
-		response = getResponseContent(response)
+		response = self.getResponseContent(response)
 		long_urls = response['long_urls']
 
 		# Check whether long urls match
