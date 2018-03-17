@@ -113,8 +113,6 @@ class TestURLShortener(unittest.TestCase):
 
 		response = self.getResponseContent(response)
 
-		print response
-
 		response_count = response.get('count')
 		if not response_count:
 			raise Exception('Key Missing!')
