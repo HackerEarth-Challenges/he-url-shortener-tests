@@ -9,7 +9,7 @@ To run the test suite, do the following -
 
  1. Clone the repository
 ``` 
-$ git clone git@github.com:apoorvasomani/he-url-shortener.git 
+$ git clone git@github.com:HackerEarth-Challenges/he-url-shortener-tests.git
 ``` 
 
 2. Install the dependencies
